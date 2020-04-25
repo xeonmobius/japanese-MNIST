@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiragana Recognizer</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="https://cdn.metroui.org.ua/v4.3.2/css/metro-all.min.css">
+</head>
+<body>
+    <div class="center">
+        <h1>Japanese Hiragana Predictor</h1>
+        <canvas id="myCanvas" width="500px" height="500px"></canvas>
+        <br>
+        <button id="clearButton">Clear</button>
+        <button id="predictButton">Predict</button>
+        <h2 id="prediction">Prediction: ?</h2>
+        <h2 id="confidence">Confidence: 0%</h2>
+    </div>
+    <script>
+
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext('2d');
+
+        var pos = {x: 0, y: 0};
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mousedown', setPosition);
+        canvas.addEventListener('mouseenter', setPosition);
+
+        function setPosition(e) {
+            var rect = canvas.getBoundingClientRect();
+            pos.x = e.clientX-rect.left;
+            pos.y = e.clientY-rect.top;
+        }
+
+        function draw(e) {
+            if (e.buttons !== 1) return;
+            ctx.beginPath(); // begin
+
+            ctx.lineWidth = 25;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+
+            ctx.moveTo(pos.x, pos.y); // from
+            setPosition(e);
+            ctx.lineTo(pos.x, pos.y); // to
+
+            ctx.stroke(); // draw it!
+        }
+
+        document.getElementById('clearButton').addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById("prediction").innerHTML = "Predicting: ?";
+            document.getElementById("confidence").innerHTML = "Confidence: 0%";
+        });
+        
+        function getPredictions(){
+            var xhttp = new XMLHttpRequest()
+            xhttp.onreadystatechange = function(){
+                if (xhttp.readyState == 4){
+                    if (xhttp.status != 200){
+                        console.log("Error with AJAX prediction request.")
+                    }
+                    else {
+                        var response = JSON.parse(xhttp.responseText)
+                        document.getElementById('prediction').innerHTML = response.prediction
+                        document.getElementById('confidence').innerHTML = response.confidence
+                    }
+                }
+            };
+
+            xhttp.open('POST', '/get_prediction')
+            xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+            xhttp.send(canvas.toDataURL())
+        }
+
+        document.getElementById('predictButton').addEventListener('click', getPredictions)
+
+    </script>
+</body>
+
+</html>
